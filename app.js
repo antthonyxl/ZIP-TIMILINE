@@ -7,19 +7,34 @@
   const SUPABASE_URL = "https://nuzpvkwkwksoqiggmymr.supabase.co";
   const SUPABASE_KEY = "sb_publishable_BqrMS126Z0iRSCobPYN1uw_-t5gUi0L";
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+if (!window.supabase || typeof window.supabase.createClient !== "function") {
+  alert(
+    "Erro: biblioteca do Supabase não carregou.\n\n" +
+      "Verifique se o <script src=\"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2\"></script> " +
+      "está antes do app.js (no index.html)."
+  );
+  console.error("Supabase global não encontrado. Confira a ordem dos scripts.");
+  return;
+}
+
+  // Use uma key de storage única por domínio (evita conflito localhost x GitHub Pages)
+const AUTH_STORAGE_KEY = `metas_semana_auth_${location.hostname.replace(/[^a-z0-9_]/gi, "_")}`;
+
+// Evita múltiplas instâncias do client no mesmo contexto (pode causar AbortError)
+const supabase =
+  window.__metasSupabaseClient__ ??
+  window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      storageKey: AUTH_STORAGE_KEY,
       flowType: "pkce",
-      // Evita conflito de sessão (GoTrue) em GitHub Pages / github.io
-      storageKey: "metas-semana-auth",
     },
   });
 
-  // Debug (opcional): permite testar no console do Pages sem criar outro client
-  window.__sb = supabase;
+window.__metasSupabaseClient__ = supabase;
+
 
   // =========================
   // Consts / Helpers
